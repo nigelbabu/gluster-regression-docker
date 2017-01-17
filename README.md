@@ -20,8 +20,8 @@ it for you. I assume that you have cloned glusterfs and this repo in the same
 folder. In that case, `build.sh` should Just Work.
 
 To run the container, you need to mount two volumes
-* At /code, mount the path to glusterfs repo
-* At /opt/qa, mount the path to the qa folder in this repo
+* At `/code`, mount the path to glusterfs repo
+* At `/opt/qa`, mount the path to the qa folder in this repo
 
 This is how the command looks in my computer:
 
