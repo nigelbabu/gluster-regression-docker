@@ -86,12 +86,32 @@ def parse_timing_line(line):
             int(line.split(' - ')[1].strip().split('second')[0])
     )
 
+def split_into_x_chunks(tests, snapshot, chunks):
+    chunked = defaultdict(list)
+    # Put the snapshot tests in chunk 0
+    chunked[0] = snapshot
+    chunk = 1
+    for i in range(0, len(tests)):
+        chunked[chunk].append(tests[i])
+        chunk += 1
+        # Make sure that that chunk 0 is not filled until every other chunk has
+        # the same number of tests as it does.
+        if chunk == chunks:
+            if len(chunked[chunk-1]) < len(chunked[0]):
+                chunk = 1
+            else:
+                chunk = 0
+    return dict(chunked)
+
 
 def main():
     tests = get_all_tests('../glusterfs/')
-    chunks = defaultdict(list)
-    chunks[0] = get_snapshot_tests(tests)
-    tests = list(set(tests) - set(chunks[0]))
+    # Put snapshot tests into one chunk since it's going to run outside docker
+    snapshot_tests = get_snapshot_tests(tests)
+    tests = list(set(tests) - set(snapshot_tests))
+    chunked_tests = split_into_x_chunks(tests, snapshot_tests, 10)
+    for k, v in chunked_tests.items():
+        print len(v)
 
 
 if __name__ == '__main__':
