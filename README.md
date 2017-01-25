@@ -19,13 +19,20 @@ Build the packages and place them in `qa/rpm`. The `build.sh` script should do
 it for you. I assume that you have cloned glusterfs and this repo in the same
 folder. In that case, `build.sh` should Just Work.
 
+To generate the chunks, run chunker.py
+
+    chunker.py
+
+This will create numbered files in qa/chunks with tests for each chunk. Chunk
+0 needs to be executed outside of docker at the moment.
+
 To run the container, you need to mount two volumes
 * At `/code`, mount the path to glusterfs repo
 * At `/opt/qa`, mount the path to the qa folder in this repo
 
 This is how the command looks in my computer:
 
-    sudo docker run --privileged -v ~/code/glusterfs:/code -v ~/code/gluster-docker/qa:/opt/qa gluster-test
+    sudo docker run --privileged -v ~/code/glusterfs:/code -v ~/code/gluster-docker/qa:/opt/qa gluster-test /bin/bash run-regressions.sh 1
 
 You need a privileged container so that extended attributes can be applied to
 the filesystem
