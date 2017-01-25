@@ -23,16 +23,16 @@ def get_all_tests(path):
     for root, dirs, files in os.walk(path):
         for f in files:
             if f.endswith('.t'):
-                # test_files.append(os.path.relpath(os.path.join(root, f),
-                #                                   path))
-                test_files.append(os.path.join(root, f))
+                test_files.append(os.path.relpath(os.path.join(root, f),
+                                                  path))
+                # test_files.append(os.path.join(root, f))
     return test_files
 
 
-def get_snapshot_tests(tests):
+def get_snapshot_tests(tests, path):
     snapshot = []
     for test in tests:
-        with open(test) as f:
+        with open(os.path.join(path, test)) as f:
             if 'snapshot.rc' in f.read():
                 snapshot.append(test)
     return snapshot
@@ -105,13 +105,14 @@ def split_into_x_chunks(tests, snapshot, chunks):
 
 
 def main():
-    tests = get_all_tests('../glusterfs/')
+    tests = get_all_tests(PATH_TO_GLUSTER)
     # Put snapshot tests into one chunk since it's going to run outside docker
-    snapshot_tests = get_snapshot_tests(tests)
+    snapshot_tests = get_snapshot_tests(tests, PATH_TO_GLUSTER)
     tests = list(set(tests) - set(snapshot_tests))
     chunked_tests = split_into_x_chunks(tests, snapshot_tests, 10)
     for k, v in chunked_tests.items():
-        print len(v)
+        with open('qa/chunks/' + str(k), 'w') as f:
+            f.write(' '.join(v))
 
 
 if __name__ == '__main__':
