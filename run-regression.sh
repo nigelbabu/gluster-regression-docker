@@ -10,4 +10,10 @@ mknod /dev/loop0 b 7 0
 mknod /dev/loop1 b 7 0
 mknod /dev/loop2 b 7 0
 dnf install -y --nogpgcheck glusterfs-server glusterfs-fuse glusterfs-api glusterfs-api-devel glusterfs-cli glusterfs-debuginfo glusterfs-devel glusterfs-libs glusterfs-regression-tests
-/opt/qa/regression.sh -- tests/basic
+if [ -z "$1" ]
+then
+    echo "No chunk specified"
+    exit 1
+fi
+chunk=$(cat /opt/qa/chunks/$1)
+/opt/qa/regression.sh -- $chunk
