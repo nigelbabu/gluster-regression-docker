@@ -25,7 +25,6 @@ def get_all_tests(path):
             if f.endswith('.t'):
                 test_files.append(os.path.relpath(os.path.join(root, f),
                                                   path))
-                # test_files.append(os.path.join(root, f))
     return test_files
 
 
@@ -85,6 +84,7 @@ def parse_timing_line(line):
             line.split(' - ')[0].strip(),
             int(line.split(' - ')[1].strip().split('second')[0])
     )
+
 
 def split_into_x_chunks(tests, snapshot, chunks):
     chunked = defaultdict(list)
