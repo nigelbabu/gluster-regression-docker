@@ -73,7 +73,7 @@ core_count=$(ls -l /*.core|wc -l);
 old_cores=$(ls /*.core);
 
 # Run the regression tests
-./run-tests.sh -- $CHUNK_FILES
+./run-tests.sh -c -- $CHUNK_FILES
 RET=$?
 
 # If there are new core files in /, archive this build for later analysis
