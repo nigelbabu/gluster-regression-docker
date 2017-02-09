@@ -32,5 +32,4 @@ then
     echo "No chunk specified"
     exit 1
 fi
-chunk=$(cat /opt/qa/chunks/$1)
-/opt/qa/regression.sh -- $chunk
+/opt/qa/regression.sh $1

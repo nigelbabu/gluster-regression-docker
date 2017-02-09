@@ -1,2 +1,3 @@
 qa/rpm/
 qa/chunks/[0-9]*
+logs/glusterfs*

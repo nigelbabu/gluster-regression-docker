@@ -5,7 +5,9 @@ BASE="/build/install"
 ARCHIVE_BASE="/archives"
 ARCHIVED_BUILDS="archived_builds"
 ARCHIVED_LOGS="logs"
-UNIQUE_ID="${JOB_NAME}-${BUILD_ID}"
+CHUNK=$1
+UNIQUE_ID="$(date +%Y%m%d%H%M%S)-$CHUNK"
+CHUNK_TESTS="$(cat /opt/qa/chunks/$CHUNK)"
 SERVER=`hostname`
 LIBLIST=${BASE}/cores/liblist.txt
 
@@ -71,15 +73,8 @@ core_count=$(ls -l /*.core|wc -l);
 old_cores=$(ls /*.core);
 
 # Run the regression tests
-if [ -x ./run-tests.sh ]; then
-    # If we're in the root of a GlusterFS source repo, use its tests
-    ./run-tests.sh $@
-    RET=$?
-elif [ -x ${BASE}/share/glusterfs/run-tests.sh ]; then
-    # Otherwise, use the tests in the installed location
-    ${BASE}/share/glusterfs/run-tests.sh $@
-    RET=$?
-fi
+./run-tests.sh -- $CHUNK_FILES
+RET=$?
 
 # If there are new core files in /, archive this build for later analysis
 cur_count=$(ls -l /*.core 2>/dev/null|wc -l);
@@ -170,7 +165,7 @@ fi
 if [ ${RET} -ne 0 ]; then
     filename=${ARCHIVED_LOGS}/glusterfs-logs-${UNIQUE_ID}.tgz
     tar -czf ${ARCHIVE_BASE}/$filename /var/log/glusterfs /var/log/messages*;
-    echo Logs archived in http://${SERVER}/${filename}
+    echo "Logs archived in logs/${filename}"
 fi
 
 # reset core_patterns
