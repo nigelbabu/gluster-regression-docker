@@ -28,15 +28,6 @@ def get_all_tests(path):
     return test_files
 
 
-def get_snapshot_tests(tests, path):
-    snapshot = []
-    for test in tests:
-        with open(os.path.join(path, test)) as f:
-            if 'snapshot.rc' in f.read():
-                snapshot.append(test)
-    return snapshot
-
-
 def get_regression_logs(job='centos6-regression', days=7):
     '''
     Get a list of links to last X days' logs from a Jenkins job
@@ -86,28 +77,17 @@ def parse_timing_line(line):
     )
 
 
-def split_into_x_chunks(tests, snapshot, chunks):
+def split_into_x_chunks(tests, chunks):
     chunked = defaultdict(list)
-    # Put the snapshot tests in chunk 0
-    chunked[0] = snapshot
-    chunk = 1
     for i in range(0, len(tests)):
-        chunked[chunk].append(tests[i])
-        chunk += 1
-        # Make sure that that chunk 0 is not filled until every other chunk has
-        # the same number of tests as it does.
-        if chunk == chunks:
-            if len(chunked[chunk-1]) < len(chunked[0]):
-                chunk = 1
-            else:
-                chunk = 0
+        chunked[i % chunks].append(tests[i])
     return dict(chunked)
 
 
 def main():
     tests = get_all_tests(PATH_TO_GLUSTER)
     # Put snapshot tests into one chunk since it's going to run outside docker
-    chunked_tests = split_into_x_chunks(tests, snapshot_tests, 10)
+    chunked_tests = split_into_x_chunks(tests, 10)
     for k, v in chunked_tests.items():
         with open('qa/chunks/' + str(k), 'w') as f:
             f.write(' '.join(v))
