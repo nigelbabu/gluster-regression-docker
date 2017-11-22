@@ -109,7 +109,7 @@ def main():
     # Put snapshot tests into one chunk since it's going to run outside docker
     chunked_tests = split_into_x_chunks(tests, snapshot_tests, 10)
     for k, v in chunked_tests.items():
-        with open('chunks/' + str(k), 'w') as f:
+        with open('qa/chunks/' + str(k), 'w') as f:
             f.write(' '.join(v))
 
 
