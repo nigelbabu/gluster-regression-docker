@@ -107,11 +107,9 @@ def split_into_x_chunks(tests, snapshot, chunks):
 def main():
     tests = get_all_tests(PATH_TO_GLUSTER)
     # Put snapshot tests into one chunk since it's going to run outside docker
-    snapshot_tests = get_snapshot_tests(tests, PATH_TO_GLUSTER)
-    tests = list(set(tests) - set(snapshot_tests))
     chunked_tests = split_into_x_chunks(tests, snapshot_tests, 10)
     for k, v in chunked_tests.items():
-        with open('qa/chunks/' + str(k), 'w') as f:
+        with open('chunks/' + str(k), 'w') as f:
             f.write(' '.join(v))
 
 
