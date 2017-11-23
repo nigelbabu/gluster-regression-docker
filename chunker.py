@@ -1,11 +1,14 @@
 #!/usr/bin/env python
+''''
+This tiny program looks at all the test files in gluster/tests and puts them in
+separate chunks for parallel execution.
+'''
+
 
 from collections import defaultdict
-from datetime import datetime, timedelta
-from requests.packages.urllib3.exceptions import InsecureRequestWarning
 import os.path
 import os
-import requests
+import subprocess
 
 
 JENKINS_URL = 'https://build.gluster.org'
@@ -20,7 +23,7 @@ def get_all_tests(path):
     '''
     path = os.path.normpath(path)
     test_files = []
-    for root, dirs, files in os.walk(path):
+    for root, _, files in os.walk(path):
         for f in files:
             if f.endswith('.t'):
                 test_files.append(os.path.relpath(os.path.join(root, f),
@@ -28,56 +31,26 @@ def get_all_tests(path):
     return test_files
 
 
-def get_regression_logs(job='centos6-regression', days=7):
+def get_disabled_tests(path):
     '''
-    Get a list of links to last X days' logs from a Jenkins job
+    Returns a list of tests that are disabled.
     '''
-    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-    cut_off_date = datetime.today() - timedelta(days=days)
-    for page in xrange(0, JENKINS_MAX, 100):
-        build_info = requests.get(
-                JENKINS_URL +
-                '/job/' +
-                job +
-                '/'
-                'api/json?depth=1&tree=allBuilds'
-                '[url,result,timestamp,builtOn,actions[value]]'
-                '{{{0},{1}}}'.format(page, page+100),
-                verify=False).json()
-        for build in build_info.get('allBuilds'):
-            if datetime.fromtimestamp(build['timestamp']/1000) < cut_off_date:
-                # stop when timestamp older than cut off date
-                return
-            if build['result'] == 'SUCCESS':
-                yield build['url'] + 'consoleText'
-
-
-def fetch_and_parse_timing(url):
-    '''
-    Fetch a Jenkins build URL, parse the timing, and return a list of list of
-    timing
-    '''
-    text = requests.get(url, verify=False).text
-    text = text.split('Tests ordered by time taken, slowest to fastest:')
-    timing = []
-    for line in text[1].split('\n'):
-        if line.startswith('./tests'):
-            timing.append(parse_timing_line(line))
-    return timing
-
-
-def parse_timing_line(line):
-    '''
-    Take a line of test timing info and split out a dict, one text and one
-    integer of timing
-    '''
-    return (
-            line.split(' - ')[0].strip(),
-            int(line.split(' - ')[1].strip().split('second')[0])
+    path = os.path.normpath(path)
+    disabled_tests = []
+    excluded_tests = subprocess.check_output(
+        ['grep', '-rl', 'G_TESTDEF_TEST_STATUS_CENTOS6=BAD_TEST', 'tests'],
+        cwd=path
     )
+    for line in excluded_tests.split('\n'):
+        disabled_tests.append(line)
+    return disabled_tests
 
 
 def split_into_x_chunks(tests, chunks):
+    '''
+    Take the entire list of tests and split them into as many chunks as
+    requested.
+    '''
     chunked = defaultdict(list)
     for i in range(0, len(tests)):
         chunked[i % chunks].append(tests[i])
@@ -85,12 +58,17 @@ def split_into_x_chunks(tests, chunks):
 
 
 def main():
+    '''
+    Put everything together
+    '''
+    disabled_tests = get_disabled_tests(PATH_TO_GLUSTER)
     tests = get_all_tests(PATH_TO_GLUSTER)
+    tests = list(set(tests) - set(disabled_tests))
     # Put snapshot tests into one chunk since it's going to run outside docker
     chunked_tests = split_into_x_chunks(tests, 10)
-    for k, v in chunked_tests.items():
-        with open('qa/chunks/' + str(k) + '.txt', 'w') as f:
-            f.write(' '.join(v))
+    for chunk, content in chunked_tests.items():
+        with open('qa/chunks/' + str(chunk) + '.txt', 'w') as f:
+            f.write(' '.join(content))
 
 
 if __name__ == '__main__':
